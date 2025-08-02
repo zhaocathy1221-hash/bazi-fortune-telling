@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, User, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, User, CheckCircle, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AstronomicalTimeCalculator, CHINESE_CITIES } from '@/lib/astronomical-time';
 
 interface BirthInfoInputProps {
   onSubmit: (data: {
@@ -10,6 +11,9 @@ interface BirthInfoInputProps {
     birthTime: string;
     gender: 'male' | 'female';
     calendarType: 'lunar' | 'solar';
+    birthPlace: string;
+    location: { name: string; longitude: number; latitude: number; timezone: number };
+    useTrueSolarTime: boolean;
   }) => void;
 }
 
@@ -18,6 +22,8 @@ export default function BirthInfoInput({ onSubmit }: BirthInfoInputProps) {
   const [birthTime, setBirthTime] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | ''>('');
   const [calendarType, setCalendarType] = useState<'lunar' | 'solar' | ''>('');
+  const [birthPlace, setBirthPlace] = useState('');
+  const [useTrueSolarTime, setUseTrueSolarTime] = useState(true);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validateForm = () => {
@@ -39,6 +45,10 @@ export default function BirthInfoInput({ onSubmit }: BirthInfoInputProps) {
       newErrors.calendarType = '请选择历法类型';
     }
 
+    if (!birthPlace) {
+      newErrors.birthPlace = '请选择出生地';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -47,12 +57,18 @@ export default function BirthInfoInput({ onSubmit }: BirthInfoInputProps) {
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit({
-        birthDate: new Date(birthDate),
-        birthTime,
-        gender: gender as 'male' | 'female',
-        calendarType: calendarType as 'lunar' | 'solar'
-      });
+      const location = AstronomicalTimeCalculator.getLocationByCity(birthPlace);
+      if (location) {
+        onSubmit({
+          birthDate: new Date(birthDate),
+          birthTime,
+          gender: gender as 'male' | 'female',
+          calendarType: calendarType as 'lunar' | 'solar',
+          birthPlace,
+          location,
+          useTrueSolarTime
+        });
+      }
     }
   };
 
@@ -146,6 +162,67 @@ export default function BirthInfoInput({ onSubmit }: BirthInfoInputProps) {
           {errors.gender && (
             <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
           )}
+        </div>
+
+        {/* 出生地选择 */}
+        <div>
+          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <MapPin className="w-4 h-4 mr-2" />
+            出生地
+          </label>
+          <select
+            value={birthPlace}
+            onChange={(e) => {
+              setBirthPlace(e.target.value);
+              setErrors({ ...errors, birthPlace: '' });
+            }}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              errors.birthPlace ? 'border-red-500' : 'border-gray-300'
+            }`}
+          >
+            <option value="">请选择出生地</option>
+            {Object.keys(CHINESE_CITIES).map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+          {errors.birthPlace && (
+            <p className="mt-1 text-sm text-red-600">{errors.birthPlace}</p>
+          )}
+        </div>
+
+        {/* 真太阳时选择 */}
+        <div>
+          <label className="text-sm font-medium text-gray-700 mb-2 block">
+            时间类型
+          </label>
+          <div className="space-y-3">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                checked={useTrueSolarTime}
+                onChange={(e) => setUseTrueSolarTime(e.target.checked)}
+                className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+              />
+              <div>
+                <div className="font-medium text-gray-900">真太阳时</div>
+                <div className="text-sm text-gray-500">根据出生地经度计算，精度更高</div>
+              </div>
+            </label>
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                checked={!useTrueSolarTime}
+                onChange={(e) => setUseTrueSolarTime(!e.target.checked)}
+                className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+              />
+              <div>
+                <div className="font-medium text-gray-900">标准时间</div>
+                <div className="text-sm text-gray-500">使用所在时区的标准时间</div>
+              </div>
+            </label>
+          </div>
         </div>
 
         {/* 历法选择 */}

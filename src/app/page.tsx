@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import BirthInfoInput from '@/components/birth-info-input';
 import FortuneDisplay from '@/components/fortune-display';
-import { calculateBazi } from '@/lib/bazi-calculator';
+import { baziCalculator } from '@/lib/complete-bazi-calculator';
 import { generateCompleteInterpretation } from '@/lib/fortune-interpreter';
 
 export default function Home() {
@@ -19,12 +19,32 @@ export default function Home() {
     
     try {
       // 模拟API调用延迟
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const baziResult = calculateBazi(birthInfo);
+      // 提取日期和时间信息
+      const year = birthInfo.birthDate.getFullYear();
+      const month = birthInfo.birthDate.getMonth() + 1;
+      const day = birthInfo.birthDate.getDate();
+      const timeStr = birthInfo.birthTime;
+      
+      // 使用新的完整八字计算器
+      const baziResult = baziCalculator.calculate(
+        year,
+        month,
+        day,
+        timeStr,
+        birthInfo.location,
+        birthInfo.useTrueSolarTime
+      );
+      
       const interpretationResult = generateCompleteInterpretation({
         baziData: baziResult,
-        questions: ['wealth', 'marriage', 'career', 'health', 'academy']
+        questions: ['wealth', 'marriage', 'career', 'health', 'academy'],
+        birthInfo: {
+          birthPlace: birthInfo.birthPlace,
+          gender: birthInfo.gender,
+          useTrueSolarTime: birthInfo.useTrueSolarTime
+        }
       });
 
       setBaziData(baziResult);

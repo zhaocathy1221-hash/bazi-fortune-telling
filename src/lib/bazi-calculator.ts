@@ -8,6 +8,7 @@ export interface BirthInfo {
   birthTime: string; // "HH:mm" format
   gender: 'male' | 'female';
   calendarType: 'lunar' | 'solar';
+  calibratedDate?: Date; // 校准后的真太阳时日期
 }
 
 export interface BaziResult {
@@ -228,14 +229,19 @@ function calculateTenGods(dayMaster: string, pillars: { stem: string; branch: st
  * 主计算函数
  */
 export function calculateBazi(birthInfo: BirthInfo): BaziResult {
-  const date = birthInfo.birthDate;
+  // 使用校准后的时间（真太阳时）或原始时间
+  const calculationDate = birthInfo.calibratedDate || birthInfo.birthDate;
   const [hours, minutes] = birthInfo.birthTime.split(':').map(Number);
   
+  // 设置小时和分钟
+  const workingDate = new Date(calculationDate);
+  workingDate.setHours(hours, minutes, 0, 0);
+  
   // 计算四柱
-  const yearPillar = calculateYearPillar(date.getFullYear());
-  const monthPillar = calculateMonthPillar(date.getFullYear(), date.getMonth() + 1);
-  const dayPillar = calculateDayPillar(date);
-  const hourPillar = calculateHourPillar(dayPillar.stem, hours);
+  const yearPillar = calculateYearPillar(workingDate.getFullYear());
+  const monthPillar = calculateMonthPillar(workingDate.getFullYear(), workingDate.getMonth() + 1);
+  const dayPillar = calculateDayPillar(workingDate);
+  const hourPillar = calculateHourPillar(dayPillar.stem, workingDate.getHours());
   
   const pillars = [yearPillar, monthPillar, dayPillar, hourPillar];
   
