@@ -134,7 +134,7 @@ export default function HealthWidget({
           {metrics.map(metric => (
             <div key={metric.id} className="text-center">
               <metric.icon className={`w-4 h-4 mx-auto mb-1 ${getScoreColor(metric.score)}`} />
-              <div className={`text-xs font-medium ${getScoreColor(metric.score)}`}
+              <div className={`text-xs font-medium ${getScoreColor(metric.score)}`}>
                 {metric.score}
               </div>
               <div className="text-xs text-gray-500">{metric.label}</div>
